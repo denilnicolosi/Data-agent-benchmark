@@ -22,6 +22,28 @@ START ── fan-out ───┤                                               
 - **Grounded reporting**: the report's analysis is computed from the measured metrics (never canned prose), plus an optional LLM commentary that sees every branch's code and results.
 - **Production-style observability (optional)**: native OTEL tracing to Langfuse with zero repo code, centralized prompt management with automatic local fallback, and session-level numeric scores labelled by model so two LLMs can be compared on real sessions; the repo works fully offline without any of it.
 
+## Usage
+
+The whole session happens in the Telegram chat. Setup is in [Get started](#get-started); this is what a run looks like.
+
+**1. Ask.** The bot idles on "Ready for a new session". Send the analytical request (with `/newsession` or as plain text) and it opens a fresh Aegra thread, then fans the request out to the 4 branches.
+
+![Session start and the first approval card](img/1.png)
+
+**2. Review, one branch at a time.** Each branch posts its own card: the model's `reasoning`, the generated script, and three buttons. **Approve** runs it in Docker, **Regenerate** asks for a different implementation (no limit), **Reject** kills that branch. The 4 cards arrive independently and a decision on one never touches the others.
+
+![Generated code with the Approve / Regenerate / Reject buttons](img/2.png)
+
+**3. Benchmarks.** Approved code runs in an isolated container (no network, capped RAM/CPU, one container at a time so the numbers stay comparable). Each branch reports its own result as it lands; when all 4 are done the bot posts the comparison table and asks which strategy to promote.
+
+![Per-branch results, comparison table and strategy selection](img/3.png)
+
+**4. Report.** The pick becomes the winning script, and the session folder gets the Markdown report, the chart and the script itself, all also uploaded into the chat. Then the bot goes back to idle.
+
+![Final message with chart and artifacts](img/4.png)
+
+If approved code crashes at runtime, the branch regenerates itself with the error in the prompt (up to 3 fixes) and comes back for approval with the error shown above the corrected code.
+
 ## Components
 
 | Component | Role |

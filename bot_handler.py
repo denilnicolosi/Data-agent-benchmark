@@ -500,9 +500,9 @@ async def run_workflow(app: Application, analytical_request: str):
                         "🏁 <b>Workflow completed successfully!</b>\n\n"
                         f"Winning strategy: <b>{str(selected).upper()}</b>\n"
                         f"Output in <code>{escape(str(out_dir))}</code>:\n"
-                        "• <code>data_analysis_report.md</code>, comparative report\n"
-                        "• <code>approved_analytics_solution.py</code>, winning script\n"
-                        "• <code>performance_chart.png</code>, time/memory chart"
+                        "• <code>data_analysis_report.md</code> - comparative report\n"
+                        "• <code>approved_analytics_solution.py</code> - winning script\n"
+                        "• <code>performance_chart.png</code> - time/memory chart"
                     )
                     await send_artifacts(app, out_dir)
                     return
