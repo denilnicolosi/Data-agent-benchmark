@@ -1,0 +1,7 @@
+.env
+data/
+output/
+.claude
+__pycache__
+.agents
+skills-lock.json

@@ -1,0 +1,21 @@
+# The code uses features from the 1.x line (resume-by-interrupt-id, defer=True,
+# retry_policy=, init_chat_model); retry_policy's deprecated alias is removed in 2.0.
+langgraph>=1.0,<2.0
+langchain>=1.0
+# Provider integration for the default LLM_MODEL (openai:*). If you point
+# LLM_MODEL to another provider, install its package too (e.g. langchain-anthropic).
+langchain-openai>=0.1.0
+python-telegram-bot>=21.0
+httpx>=0.27
+# bot_handler.py logging (same style as the Aegra server console output)
+structlog>=24.0
+matplotlib>=3.8.0
+psutil>=5.9.0
+python-dotenv>=1.0.0
+aegra>=0.1.0
+# Optional, needed by the two SDK-based Langfuse features: centralized prompt
+# management (LANGFUSE_PROMPTS=1 + seed_langfuse_prompts.py) and the session
+# scores the report node pushes (those only need the LANGFUSE_* keys, not the
+# prompts flag). Tracing needs NO package here: Aegra exports OTEL spans to
+# Langfuse natively.
+# langfuse>=3.0

@@ -1,0 +1,7 @@
+{
+  "graphs": {
+    "benchmark_agent": "./src/benchmark_agent/graph.py:graph"
+  },
+  "dependencies": ["./src"],
+  "env": ".env"
+}

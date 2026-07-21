@@ -1,0 +1,90 @@
+# Docker Compose - PostgreSQL + Redis + API
+# aegra dev  -> docker compose up postgres -d  (database only, in-memory broker)
+# aegra up   -> docker compose up --build      (full stack, Redis broker)
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg18
+    container_name: demo_parallelization-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-demo_parallelization}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-demo_parallelization_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-demo_parallelization}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-demo_parallelization}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: demo_parallelization-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  demo_parallelization:
+    build: .
+    container_name: demo_parallelization-api
+    restart: unless-stopped
+    ports:
+      - "${PORT:-2026}:${PORT:-2026}"
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-demo_parallelization}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-demo_parallelization_secret}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=${POSTGRES_DB:-demo_parallelization}
+      - AEGRA_CONFIG=aegra.json
+      - AUTH_TYPE=${AUTH_TYPE:-noop}
+      - PORT=${PORT:-2026}
+      - REDIS_BROKER_ENABLED=true
+      - REDIS_URL=redis://redis:6379/0
+      # Full-container benchmark execution: scripts/DB are staged into this
+      # named volume, which the sibling benchmark containers mount by name
+      - BENCHMARK_SHARED_VOLUME=demo_parallelization_benchmark_shared
+      - BENCHMARK_SHARED_DIR=/shared
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:${PORT:-2026}/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    # Root is required to use the host docker socket; the Dockerfile's non-root
+    # user stays the default for deployments that don't run benchmarks
+    user: root
+    volumes:
+      - ./src:/app/src:ro
+      - ./aegra.json:/app/aegra.json:ro
+      - ./wrapper.py:/app/wrapper.py:ro
+      - ./data_generator.py:/app/data_generator.py:ro
+      - ./Dockerfile.benchmark:/app/Dockerfile.benchmark:ro
+      # Host docker daemon: benchmark containers run as siblings of this one
+      - /var/run/docker.sock:/var/run/docker.sock
+      - benchmark_shared:/shared
+
+volumes:
+  postgres_data:
+  redis_data:
+  benchmark_shared:
+    # Explicit name so BENCHMARK_SHARED_VOLUME doesn't depend on the compose
+    # project name prefix
+    name: demo_parallelization_benchmark_shared
